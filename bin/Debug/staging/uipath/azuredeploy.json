@@ -19,15 +19,29 @@
       "type": "String"
     },
     "storageAccounts_uipathdiag637_name": {
-      "defaultValue": "uipathdiag637",
+      "defaultValue": "robotstorage111",
       "type": "String"
     },
     "networkSecurityGroups_Robot_nsg_name": {
       "defaultValue": "Robot-nsg",
       "type": "String"
+    },
+    "_artifactsLocation": {
+      "type": "string",
+      "metadata": {
+        "description": "Auto-generated container in staging storage account to receive post-build staging folder upload"
+      }
+    },
+    "_artifactsLocationSasToken": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Auto-generated token to access _artifactsLocation"
+      }
     }
   },
-  "variables": {},
+  "variables": {
+    "robotScriptFolder": "CustomScripts",
+    "robotScriptFileName": "robot.ps1"},
   "resources": [
     {
       "type": "Microsoft.Network/networkSecurityGroups",
@@ -521,7 +535,33 @@
             "storageUri": "[concat('https://', parameters('storageAccounts_uipathdiag637_name'), '.blob.core.windows.net/')]"
           }
         }
-      }
+      },
+      "resources": [
+        {
+          "name": "robot",
+          "type": "extensions",
+          "location": "eastus",
+          "apiVersion": "2016-03-30",
+          "dependsOn": [
+            "[resourceId('Microsoft.Compute/virtualMachines', parameters('virtualMachines_Robot_name'))]"
+          ],
+          "tags": {
+            "displayName": "robot"
+          },
+          "properties": {
+            "publisher": "Microsoft.Compute",
+            "type": "CustomScriptExtension",
+            "typeHandlerVersion": "1.4",
+            "autoUpgradeMinorVersion": true,
+            "settings": {
+              "fileUris": [
+                "[concat(parameters('_artifactsLocation'), '/', variables('robotScriptFolder'), '/', variables('robotScriptFileName'), parameters('_artifactsLocationSasToken'))]"
+              ],
+              "commandToExecute": "[concat('powershell -ExecutionPolicy Unrestricted -File ', variables('robotScriptFolder'), '/', variables('robotScriptFileName'))]"
+            }
+          }
+        }
+      ]
     },
     {
       "type": "Microsoft.Network/networkInterfaces",
